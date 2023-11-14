@@ -33,3 +33,15 @@ server.on("connection", (socket) => {
       socket.write(`Server received : ${request}`);
     }
   });
+
+  socket.on("error", (err) => {
+    console.log(`${clientAddress} : ${err}`);
+  });
+
+  socket.on("close", () => {
+    clientArray.splice(clientArray.indexOf(socket), 1);
+    authenticatedClients.splice(authenticatedClients.indexOf(socket), 1);
+    console.log(`connection from ${clientCounter} - ${clientAddress} closed`);
+    clientCounter--;
+  });
+});
