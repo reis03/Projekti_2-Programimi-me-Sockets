@@ -45,3 +45,14 @@ server.on("connection", (socket) => {
     clientCounter--;
   });
 });
+
+function commandHandler(commandsArray, socket) {
+  const commands = commandsArray.split(" ");
+  const req = commands[0];
+  const isAuthenticated = authenticatedClients.includes(socket);
+
+}
+
+function checkLengthOfCommandArray(commandsArray) {
+  return commandsArray.length >= 2;
+}
