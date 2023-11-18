@@ -70,11 +70,24 @@ function commandHandler(commandsArray, socket) {
         return;
     }
 
-    if (req === "/write") {
-     //add logic for writing content onto files.
-    } else { // /execute
-       //add logic for executing a file. good luck.
-    }
+      if (req === "/write") {
+        const filename = commands[1];
+      const text = commands.slice(2).join(" ");
+      fs.writeFile(filename, text, function (err) {
+          if (err) throw err;
+          console.log('Saved!');
+      });
+
+    } else {
+        fs.open(filename, 'r', (err, fd) => {
+            if (err) throw err;
+            fs.fstat(fd, (err, stats) => {
+                if (err) throw err;
+                console.log(`File opened successfully with file descriptor: ${fd}`);
+            });
+            socket.write(`The file was executed: ${filename}`);
+        });
+      }
 } else if (req === "/exit") {
     socket.write("/exit"); // sends it back just to close the loop back in client
     socket.end();
@@ -85,12 +98,23 @@ function commandHandler(commandsArray, socket) {
         socket.write("Invalid arguments.");
         return;
     }
-    //add logic to check if password is correct, don't forget error checking, don't give too much info(security issue?)
+    const password = commands[1]; //commands[1].trim();
+    if (password === 'mysecretpassword' && authenticatedClients.length < 1) {
+        authenticatedClients.push(socket);
+        socket.write('Welcome! You are now authenticated.');
+    } else {
+        if (authenticatedClients.length > 0) {
+            socket.write('Error.');
+        } else {
+            socket.write('Invalid response.');
+        }
+    }
 } else {
     socket.write('400: Invalid command');
 }
 return;
 }
+
 
 function checkLengthOfCommandArray(commandsArray) {
   return commandsArray.length >= 2;
