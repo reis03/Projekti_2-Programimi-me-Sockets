@@ -3,9 +3,7 @@ var server = net.createServer();
 const port = 3005;
 const host = "localhost"; //192.168.0.1
 const clientArray = []; // might need it later to propagate messages to all clients/other clients
-let clientCounter = 0;
 const authenticatedClients = [];
-
 const fs = require("fs");
 
 server.listen(port, host, () => {
@@ -14,17 +12,14 @@ server.listen(port, host, () => {
 
 server.on("connection", (socket) => {
   //when new clients are added
-  var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
-  console.log(
-    `new client connected: Client ${clientCounter + 1} - ${clientAddress}`
-  );
+  //var clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
+  console.log(`Client ${socket.remotePort} connected.`);
   clientArray.push(socket); // add client to the array
-  clientCounter++;
 
   socket.on("data", (data) => {
     const request = data.toString(); // Parse the incoming data as a string
     clientArray.push(socket);
-    console.log(`Client ${clientCounter} - ${clientAddress} : ${request}`);
+    console.log(`Client ${socket.remotePort} : ${request}`);
     if (request.startsWith("/")) {
       // is a command
       commandHandler(request, socket);
@@ -35,14 +30,13 @@ server.on("connection", (socket) => {
   });
 
   socket.on("error", (err) => {
-    console.log(`${clientAddress} : ${err}`);
+    console.log(`${socket.remotePort}: ${err}`);
   });
 
   socket.on("close", () => {
     clientArray.splice(clientArray.indexOf(socket), 1);
     authenticatedClients.splice(authenticatedClients.indexOf(socket), 1);
-    console.log(`connection from ${clientCounter} - ${clientAddress} closed`);
-    clientCounter--;
+    console.log(`connection from client ${socket.remotePort} closed`);
   });
 });
 
@@ -50,12 +44,8 @@ function commandHandler(commandsArray, socket) {
   const commands = commandsArray.split(" ");
   const req = commands[0];
   const isAuthenticated = authenticatedClients.includes(socket);
-
   if (req === "/read") {
-    if (!checkLengthOfCommandArray(commandsArray)) {
-        socket.write("Invalid arguments.");
-        return;
-    }
+    if (!checkLengthOfCommandArray(commands)) { socket.write("Invalid arguments."); return; }
 
     const filename = commands[1];
     if (fs.existsSync(filename)) {
@@ -64,20 +54,20 @@ function commandHandler(commandsArray, socket) {
     } else {
         socket.write("File does not exist.");
     }
-} else if (req === "/write" || req === "/execute") { // combined in 1 if statement because both require elevated perms
-    if (!isAuthenticated || !checkLengthOfCommandArray(commandsArray)) {
+  } else if (req === "/write" || req === "/execute") { // combined in 1 if statement because both require elevated perms
+    
+    if (!isAuthenticated || !checkLengthOfCommandArray(commands)) {
         socket.write(!isAuthenticated ? "Unauthorized." : "Invalid arguments.");
         return;
     }
-
-      if (req === "/write") {
-        const filename = commands[1];
-      const text = commands.slice(2).join(" ");
-      fs.writeFile(filename, text, function (err) {
-          if (err) throw err;
-          console.log('Saved!');
+    if (req === "/write") {
+    const filename = commands[1];
+    const text = commands.slice(2).join(" ");
+    fs.writeFile(filename, text, function (err) {
+        if (err) throw err;
+        console.log('Saved!');
       });
-
+      socket.write(`The file was written to: ${filename}`);
     } else {
         fs.open(filename, 'r', (err, fd) => {
             if (err) throw err;
@@ -92,9 +82,18 @@ function commandHandler(commandsArray, socket) {
     socket.write("/exit"); // sends it back just to close the loop back in client
     socket.end();
 } else if (req === "/list") {
-    //add logic to list all clients in the socket servers
+  let text = ``;
+  let count = 1;
+  clientArray.forEach(client => {
+      if ((client != socket) && !(text.match(`Client ${client.remotePort}`))) {
+          text += `Client ${client.remotePort}\n`;
+          count++;
+      }
+  });
+  text += `Client ${socket.remotePort}(self)\nClient count: ${count}\n`;
+  socket.write(text);
 } else if (req === "/password") {
-    if (!checkLengthOfCommandArray(commandsArray)) {
+    if (!checkLengthOfCommandArray(commands)) {
         socket.write("Invalid arguments.");
         return;
     }
@@ -117,5 +116,5 @@ return;
 
 
 function checkLengthOfCommandArray(commandsArray) {
-  return commandsArray.length >= 2;
+  return commandsArray.length > 1;
 }
