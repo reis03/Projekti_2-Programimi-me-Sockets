@@ -4,7 +4,7 @@ Rrjeta Kompjuterike
 Node -JS Sockets 
 Client &  Server 
 Required files to run the project: 
-- Node JS - https://nodejs.org/en/download
+- Node JS : https://nodejs.org/en/download
 - Project files, server.js and client.js
 
 Steps to run the project:
