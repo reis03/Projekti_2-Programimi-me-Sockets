@@ -5,7 +5,7 @@ const host = "localhost"; //192.168.0.1
 const clientArray = []; // might need it later to propagate messages to all clients/other clients
 const authenticatedClients = [];
 const fs = require("fs");
-
+// PASSWORDI JUST IN CASE : mysecretpassword
 server.listen(port, host, () => {
   console.log(`TCP server listening on ${host}:${port}`);
 });
@@ -45,75 +45,78 @@ function commandHandler(commandsArray, socket) {
   const req = commands[0];
   const isAuthenticated = authenticatedClients.includes(socket);
   if (req === "/read") {
-    if (!checkLengthOfCommandArray(commands)) { socket.write("Invalid arguments."); return; }
+    if (!checkLengthOfCommandArray(commands)) {
+      socket.write("Invalid arguments.");
+      return;
+    }
 
     const filename = commands[1];
     if (fs.existsSync(filename)) {
-        const content = fs.readFileSync(filename, 'utf8');
-        socket.write(`The file contains: ${content}`);
+      const content = fs.readFileSync(filename, "utf8");
+      socket.write(`The file contains: ${content}`);
     } else {
-        socket.write("File does not exist.");
+      socket.write("File does not exist.");
     }
-  } else if (req === "/write" || req === "/execute") { // combined in 1 if statement because both require elevated perms
-    
+  } else if (req === "/write" || req === "/execute") {
+    // combined in 1 if statement because both require elevated perms
+
     if (!isAuthenticated || !checkLengthOfCommandArray(commands)) {
-        socket.write(!isAuthenticated ? "Unauthorized." : "Invalid arguments.");
-        return;
+      socket.write(!isAuthenticated ? "Unauthorized." : "Invalid arguments.");
+      return;
     }
     if (req === "/write") {
-    const filename = commands[1];
-    const text = commands.slice(2).join(" ");
-    fs.writeFile(filename, text, function (err) {
+      const filename = commands[1];
+      const text = commands.slice(2).join(" ");
+      fs.writeFile(filename, text, function (err) {
         if (err) throw err;
-        console.log('Saved!');
+        console.log("Saved!");
       });
       socket.write(`The file was written to: ${filename}`);
     } else {
-        fs.open(filename, 'r', (err, fd) => {
-            if (err) throw err;
-            fs.fstat(fd, (err, stats) => {
-                if (err) throw err;
-                console.log(`File opened successfully with file descriptor: ${fd}`);
-            });
-            socket.write(`The file was executed: ${filename}`);
+      fs.open(filename, "r", (err, fd) => {
+        if (err) throw err;
+        fs.fstat(fd, (err, stats) => {
+          if (err) throw err;
+          console.log(`File opened successfully with file descriptor: ${fd}`);
         });
-      }
-} else if (req === "/exit") {
+        socket.write(`The file was executed: ${filename}`);
+      });
+    }
+  } else if (req === "/exit") {
     socket.write("/exit"); // sends it back just to close the loop back in client
     socket.end();
-} else if (req === "/list") {
-  let text = ``;
-  let count = 1;
-  clientArray.forEach(client => {
-      if ((client != socket) && !(text.match(`Client ${client.remotePort}`))) {
-          text += `Client ${client.remotePort}\n`;
-          count++;
+  } else if (req === "/list") {
+    let text = ``;
+    let count = 1;
+    clientArray.forEach((client) => {
+      if (client != socket && !text.match(`Client ${client.remotePort}`)) {
+        text += `Client ${client.remotePort}\n`;
+        count++;
       }
-  });
-  text += `Client ${socket.remotePort}(self)\nClient count: ${count}\n`;
-  socket.write(text);
-} else if (req === "/password") {
+    });
+    text += `Client ${socket.remotePort}(self)\nClient count: ${count}\n`;
+    socket.write(text);
+  } else if (req === "/password") {
     if (!checkLengthOfCommandArray(commands)) {
-        socket.write("Invalid arguments.");
-        return;
+      socket.write("Invalid arguments.");
+      return;
     }
     const password = commands[1]; //commands[1].trim();
-    if (password === 'mysecretpassword' && authenticatedClients.length < 1) {
-        authenticatedClients.push(socket);
-        socket.write('Welcome! You are now authenticated.');
+    if (password === "mysecretpassword" && authenticatedClients.length < 1) {
+      authenticatedClients.push(socket);
+      socket.write("Welcome! You are now authenticated.");
     } else {
-        if (authenticatedClients.length > 0) {
-            socket.write('Error.');
-        } else {
-            socket.write('Invalid response.');
-        }
+      if (authenticatedClients.length > 0) {
+        socket.write("Error.");
+      } else {
+        socket.write("Invalid response.");
+      }
     }
-} else {
-    socket.write('400: Invalid command');
+  } else {
+    socket.write("400: Invalid command");
+  }
+  return;
 }
-return;
-}
-
 
 function checkLengthOfCommandArray(commandsArray) {
   return commandsArray.length > 1;
