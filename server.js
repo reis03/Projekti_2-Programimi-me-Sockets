@@ -5,7 +5,14 @@ const host = "localhost"; //192.168.0.1
 const clientArray = []; // might need it later to propagate messages to all clients/other clients
 const authenticatedClients = [];
 const fs = require("fs");
-// PASSWORDI JUST IN CASE : mysecretpassword
+const colorizeText = (text, color) => {
+  const colors = {
+    reset: "\x1b[0m",
+    green: "\x1b[32m",
+  };
+  return `${colors[color]}${text}${colors.reset}`;
+};
+
 server.listen(port, host, () => {
   console.log(`TCP server listening on ${host}:${port}`);
 });
@@ -18,14 +25,21 @@ server.on("connection", (socket) => {
 
   socket.on("data", (data) => {
     const request = data.toString(); // Parse the incoming data as a string
-    clientArray.push(socket);
+    // clientArray.push(socket);
     console.log(`Client ${socket.remotePort} : ${request}`);
     if (request.startsWith("/")) {
       // is a command
       commandHandler(request, socket);
     } else {
       //is a text
-      socket.write(`Server received : ${request}`);
+      socket.write(colorizeText("Server received your message.", "green"));
+      clientArray.forEach((client) => {
+        if (client !== socket) {
+          client.write(
+            colorizeText(`Client ${socket.remotePort}: ${request}`, "green")
+          );
+        }
+      });
     }
   });
 
