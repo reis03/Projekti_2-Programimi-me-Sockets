@@ -34,9 +34,13 @@ server.on("connection", (socket) => {
   });
 
   socket.on("close", () => {
-    clientArray.splice(clientArray.indexOf(socket), 1);
-    authenticatedClients.splice(authenticatedClients.indexOf(socket), 1);
+    removeSocketFromArray(socket);
     console.log(`connection from client ${socket.remotePort} closed`);
+  });
+
+  socket.on("end", () => {
+    removeSocketFromArray(socket);
+    console.log(`connection from client ${socket.remotePort} ended`);
   });
 });
 
@@ -83,7 +87,6 @@ function commandHandler(commandsArray, socket) {
       });
     }
   } else if (req === "/exit") {
-    socket.write("/exit"); // sends it back just to close the loop back in client
     socket.end();
   } else if (req === "/list") {
     let text = ``;
@@ -120,4 +123,9 @@ function commandHandler(commandsArray, socket) {
 
 function checkLengthOfCommandArray(commandsArray) {
   return commandsArray.length > 1;
+}
+
+function removeSocketFromArray(socket) {
+  clientArray.splice(clientArray.indexOf(socket), 1);
+  authenticatedClients.splice(authenticatedClients.indexOf(socket), 1);
 }
