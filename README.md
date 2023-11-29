@@ -1,7 +1,7 @@
 # Projekti_2-Programimi-me-Sockets
 Rrjeta Kompjuterike
 
-Node -JS Sockets 
+Node JS Sockets 
 Client &  Server 
 # Required files to run the project: 
 - Node JS : https://nodejs.org/en/download
