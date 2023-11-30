@@ -25,7 +25,7 @@ server.on("connection", (socket) => {
 
   socket.on("data", (data) => {
     const request = data.toString(); // Parse the incoming data as a string
-    // clientArray.push(socket);
+    clientArray.push(socket);
     console.log(`Client ${socket.remotePort} : ${request}`);
     if (request.startsWith("/")) {
       // is a command
@@ -33,13 +33,6 @@ server.on("connection", (socket) => {
     } else {
       //is a text
       socket.write(colorizeText("Server received your message.", "green"));
-      clientArray.forEach((client) => {
-        if (client !== socket) {
-          client.write(
-            colorizeText(`Client ${socket.remotePort}: ${request}`, "green")
-          );
-        }
-      });
     }
   });
 
